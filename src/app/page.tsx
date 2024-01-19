@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import { Accordion, AccordionItem, Badge, Button, Card, CardBody, CardFooter, CardHeader, Divider, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Tooltip, useDisclosure } from '@nextui-org/react';
+import { Accordion, AccordionItem, Badge, Button, Card, CardBody, CardFooter, CardHeader, Divider, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Selection, Tooltip, useDisclosure } from '@nextui-org/react';
 import { BellIcon, CrumpledPaperIcon, LightningBoltIcon, PlusIcon, ResetIcon, RocketIcon, TrashIcon } from '@radix-ui/react-icons';
 // pages/index.tsx
 import { useEffect, useState } from 'react';
@@ -21,20 +21,18 @@ function sortHabitsByPriority(habits: Habit[]): Habit[] {
 }
 
 const Days: string[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-function sortDays(randomDays: string[]): string[] {
-  const sortedDays = randomDays.sort((a: string, b: string) => Days.indexOf(a) - Days.indexOf(b));
+function sortDays(randomDays: any[]): any[] {
+  const sortedDays = randomDays.sort((a: any, b: any) => Days.indexOf(a) - Days.indexOf(b));
   return sortedDays;
 }
-
-type Selection = Set<string>
 
 const HabitTracker = () => {
   if (!global?.window) return null;
 
   const [habits, setHabits] = useState<Habit[]>(window.localStorage.getItem('habit-tracker-app') != undefined ? JSON.parse(String(window.localStorage.getItem('habit-tracker-app'))) : []);
   const [habitTitle, setHabitTitle] = useState('');
-  const [habitDays, setHabitDays] = useState<string[]>([]);
-  const [habitDaysSet, setHabitDaysSet] = useState<Set<string>>(new Set<string>());
+  const [habitDays, setHabitDays] = useState<any[]>([]);
+  const [habitDaysSet, setHabitDaysSet] = useState<Selection>(new Set([]));
   const [habitPriority, setHabitPriority] = useState('');
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -96,7 +94,7 @@ const HabitTracker = () => {
   }, { completed: 0, notCompleted: 0 });
 
   useEffect(() => {
-    setHabitDays(sortDays(Array.from<string>(habitDaysSet)))
+    setHabitDays(sortDays(Array.from(habitDaysSet)))
   }, [habitDaysSet])
 
   // Update local storage whenever tasks state changes
@@ -222,26 +220,9 @@ const HabitTracker = () => {
                       <Button color='warning' isIconOnly variant='flat' size='sm' className='md:hidden md:group-hover:flex' onClick={() => resetCompletedDays(habit.id)}><ResetIcon /></Button>
                     </Tooltip>
                     <Tooltip content="Delete Habit">
-                      <Button color='danger' isIconOnly variant='flat' size='sm' onPress={onOpen} className='md:hidden md:group-hover:flex'><TrashIcon /></Button>
+                      <Button color='danger' isIconOnly variant='flat' size='sm' className='md:hidden md:group-hover:flex' onClick={() => deleteHabit(habit.id)}><TrashIcon /></Button>
                     </Tooltip>
                   </div>
-                  <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-                    <ModalContent>
-                      {(onClose) => (
-                        <>
-                          <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
-                          <ModalBody>
-                            <p>Do you really want to delete?</p>
-                          </ModalBody>
-                          <ModalFooter>
-                            <Button color="danger" size='sm' onPress={onClose} onClick={() => deleteHabit(habit.id)}>
-                              Delete Permanently
-                            </Button>
-                          </ModalFooter>
-                        </>
-                      )}
-                    </ModalContent>
-                  </Modal>
                 </div>
                 <p className="text-small text-default-500">Total Days: {habit.days.length}</p>
                 {
@@ -294,7 +275,7 @@ const HabitTracker = () => {
             <AccordionItem key="1" className='p-0' aria-label="New Task" title="New Task" indicator={<PlusIcon />}>
               <div className='flex justify-between items-center space-x-2'>
                 <Input type='text' label="Habit Title" size='sm' className='w-full' description={"Make sure it's your precise habit."} value={habitTitle} onValueChange={(value) => setHabitTitle(value)} />
-                <Select selectionMode='multiple' label="Days" size='sm' className="w-full" description={"Mention the days to align this habit."} selectedKeys={habitDaysSet} onSelectionChange={(keys: Set<string>) => setHabitDaysSet(keys)} >
+                <Select selectionMode='multiple' label="Days" size='sm' className="w-full" description={"Mention the days to align this habit."} selectedKeys={habitDaysSet} onSelectionChange={setHabitDaysSet} >
                   <SelectItem key={"Sunday"} value={"Sunday"}>Sunday</SelectItem>
                   <SelectItem key={"Monday"} value={"Monday"}>Monday</SelectItem>
                   <SelectItem key={"Tuesday"} value={"Tuesday"}>Tuesday</SelectItem>
