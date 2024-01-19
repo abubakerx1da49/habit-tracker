@@ -1,113 +1,321 @@
-import Image from 'next/image'
+/* eslint-disable react-hooks/rules-of-hooks */
+"use client"
+import { Accordion, AccordionItem, Badge, Button, Card, CardBody, CardFooter, CardHeader, Divider, Image, Input, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Tooltip, useDisclosure } from '@nextui-org/react';
+import { BellIcon, CrumpledPaperIcon, LightningBoltIcon, PlusIcon, ResetIcon, RocketIcon, TrashIcon } from '@radix-ui/react-icons';
+// pages/index.tsx
+import { useEffect, useState } from 'react';
 
-export default function Home() {
+interface Habit {
+  id: number;
+  title: string;
+  days: string[];
+  priority: string;
+  completed: Record<string, boolean>; // Map to store completion status for each day
+}
+
+function sortHabitsByPriority(habits: Habit[]): Habit[] {
+  const sortedHabits = habits.sort((a, b) => {
+    return a.priority.localeCompare(b.priority);
+  });
+  return sortedHabits;
+}
+
+const Days: string[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function sortDays(randomDays: string[]): string[] {
+  const sortedDays = randomDays.sort((a: string, b: string) => Days.indexOf(a) - Days.indexOf(b));
+  return sortedDays;
+}
+
+type Selection = Set<string>
+
+const HabitTracker = () => {
+  if (!global?.window) return null;
+
+  const [habits, setHabits] = useState<Habit[]>(window.localStorage.getItem('habit-tracker-app') != undefined ? JSON.parse(String(window.localStorage.getItem('habit-tracker-app'))) : []);
+  const [habitTitle, setHabitTitle] = useState('');
+  const [habitDays, setHabitDays] = useState<string[]>([]);
+  const [habitDaysSet, setHabitDaysSet] = useState<Set<string>>(new Set<string>());
+  const [habitPriority, setHabitPriority] = useState('');
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  const addHabit = () => {
+    if (!habitTitle || habitDays.length === 0 || !habitPriority) return;
+
+    const newHabit: Habit = {
+      id: Date.now(),
+      title: habitTitle,
+      days: sortDays(habitDays),
+      priority: (Number(habitPriority) > 4) ? '4' : habitPriority,
+      completed: {},
+    };
+
+    setHabits((prevHabits) => [...prevHabits, newHabit]);
+    window.localStorage.setItem('habit-tracker-app', JSON.stringify([...habits, newHabit]))
+    setHabitTitle('');
+    setHabitDays([]);
+    setHabitDaysSet(new Set())
+    setHabitPriority('');
+  };
+
+  const toggleCompletion = (habitId: number, day: string) => {
+    setHabits((prevHabits) =>
+      prevHabits.map((habit) =>
+        habit.id === habitId
+          ? {
+            ...habit,
+            completed: {
+              ...habit.completed,
+              [day]: !habit.completed[day],
+            },
+          }
+          : habit
+      )
+    );
+  };
+
+  const deleteHabit = (id: number) => {
+    setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== id));
+  };
+
+  function resetCompletedDays(habitId: number) {
+    const updatedHabits = habits.map((habit) =>
+      habit.id === habitId ? { ...habit, completed: {} } : habit
+    );
+    setHabits(updatedHabits);
+  }
+
+  const completedTasksCount = habits.reduce((count, habit) => {
+    Object.values(habit.completed).forEach((isCompleted) => {
+      if (isCompleted) {
+        count.completed++;
+      } else {
+        count.notCompleted++;
+      }
+    });
+    return count;
+  }, { completed: 0, notCompleted: 0 });
+
+  useEffect(() => {
+    setHabitDays(sortDays(Array.from<string>(habitDaysSet)))
+  }, [habitDaysSet])
+
+  // Update local storage whenever tasks state changes
+  useEffect(() => {
+    localStorage.setItem('habit-tracker-app', JSON.stringify(habits));
+  }, [habits]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
+
+    <div className='w-screen h-screen flex items-center justify-center py-2 md:p-10 2xl:p-20 overflow-x-hidden text-sm md:text-base'>
+      <div className='p-2 pb-8 w-full xl:4/5 2xl:w-3/5 h-full'>
+        <Card className="w-full">
+          <CardHeader className="flex gap-3">
             <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+              alt="Habit Tracker Logo"
+              height={40}
+              radius="sm"
+              src="https://avatars.githubusercontent.com/u/91818906?s=400&u=6e1018587b8c64e66afb1456061b5638eab86fe0&v=4"
+              width={40}
             />
-          </a>
+            <div className="flex flex-col">
+              <p className="text-md">Habit Tracker</p>
+              <p className="text-xs md:text-small text-default-500">
+                Made by
+                <Link
+                  className='mx-1 text-xs md:text-small'
+                  isExternal
+                  showAnchorIcon
+                  href="https://github.com/Abubakersiddique761"
+                >
+                  Abubakersiddique761
+                </Link></p>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody>
+            <p className="text-small text-default-500">Total Habits: <strong>{habits.length}</strong></p>
+            <p className="text-small text-default-500">Today: <strong>{Days[new Date().getDay() - 1]}</strong></p>
+            {/* <p className="text-small text-default-500">Remaining Tasks: <strong>{completedTasksCount.notCompleted}</strong></p>
+            <p className="text-small text-default-500">Completed: <strong>{completedTasksCount.completed}</strong></p> */}
+          </CardBody>
+        </Card>
+        <div className='mt-2 sm:columns-2 md:columns-3 lg:columns-4 gap-2'>
+          {sortHabitsByPriority(habits).map((habit) => (
+            <Card className="w-full mb-2 group" key={habit.id}>
+              <CardHeader className="flex flex-col items-start gap-1">
+                <div className='flex items-center justify-between w-full'>
+                  <div className='flex items-start gap-3'>
+                    <Badge content="" color="success" isInvisible={
+                      habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] ?
+                        false
+                        :
+                        true
+                    }>
+                      {
+                        habit.priority == '1' && (
+                          <Button color='danger' isIconOnly disabled variant={
+                            habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] ?
+                              habit.days.includes(Days[new Date().getDay() - 1]) && habit.completed[Days[new Date().getDay() - 1]] ?
+                                'bordered'
+                                :
+                                'solid'
+                              :
+                              'flat'
+                          }>
+                            <RocketIcon />
+                          </Button>
+                        )
+                      }
+                      {
+                        habit.priority == '2' && (
+                          <Button color='warning' isIconOnly disabled variant={
+                            habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] ?
+                              habit.days.includes(Days[new Date().getDay() - 1]) && habit.completed[Days[new Date().getDay() - 1]] ?
+                                'bordered'
+                                :
+                                'solid'
+                              :
+                              'flat'
+                          }>
+                            <LightningBoltIcon />
+                          </Button>
+                        )
+                      }
+                      {
+                        habit.priority == '3' && (
+                          <Button color='primary' isIconOnly disabled variant={
+                            habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] ?
+                              habit.days.includes(Days[new Date().getDay() - 1]) && habit.completed[Days[new Date().getDay() - 1]] ?
+                                'bordered'
+                                :
+                                'solid'
+                              :
+                              'flat'
+                          }>
+                            <BellIcon />
+                          </Button>
+                        )
+                      }
+                      {
+                        habit.priority == '4' && (
+                          <Button color='default' isIconOnly disabled variant={
+                            habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] ?
+                              habit.days.includes(Days[new Date().getDay() - 1]) && habit.completed[Days[new Date().getDay() - 1]] ?
+                                'bordered'
+                                :
+                                'solid'
+                              :
+                              'flat'
+                          }>
+                            <CrumpledPaperIcon />
+                          </Button>
+                        )
+                      }
+                    </Badge>
+                    <div className="flex flex-col">
+                      <p className="text-md">{habit.title}</p>
+                      <p className="text-small text-default-500">Priority: {habit.priority}</p>
+                    </div>
+                  </div>
+                  <div className='flex gap-2'>
+                    <Tooltip content="Reset Days">
+                      <Button color='warning' isIconOnly variant='flat' size='sm' className='md:hidden md:group-hover:flex' onClick={() => resetCompletedDays(habit.id)}><ResetIcon /></Button>
+                    </Tooltip>
+                    <Tooltip content="Delete Habit">
+                      <Button color='danger' isIconOnly variant='flat' size='sm' onPress={onOpen} className='md:hidden md:group-hover:flex'><TrashIcon /></Button>
+                    </Tooltip>
+                  </div>
+                  <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+                    <ModalContent>
+                      {(onClose) => (
+                        <>
+                          <ModalHeader className="flex flex-col gap-1">Delete</ModalHeader>
+                          <ModalBody>
+                            <p>Do you really want to delete?</p>
+                          </ModalBody>
+                          <ModalFooter>
+                            <Button color="danger" size='sm' onPress={onClose} onClick={() => deleteHabit(habit.id)}>
+                              Delete Permanently
+                            </Button>
+                          </ModalFooter>
+                        </>
+                      )}
+                    </ModalContent>
+                  </Modal>
+                </div>
+                <p className="text-small text-default-500">Total Days: {habit.days.length}</p>
+                {
+                  habit.days.includes(Days[new Date().getDay() - 1]) && !habit.completed[Days[new Date().getDay() - 1]] && (
+                    <strong className="text-small">You have an task to finish.</strong>
+                  )
+                }
+                {
+                  habit.days.includes(Days[new Date().getDay() - 1]) && habit.completed[Days[new Date().getDay() - 1]] && (
+                    <strong className="text-small text-success">Today&apos;s task is finished.</strong>
+                  )
+                }
+              </CardHeader>
+              <div className='p-3 pt-0'>
+                <div className='grid grid-cols-4 gap-2'>
+                  {habit.days.map((day) => (
+                    <Button
+                      key={day}
+                      variant={
+                        Days[new Date().getDay() - 1] == day ?
+                          habit.completed[day] ?
+                            'flat'
+                            :
+                            'solid'
+                          :
+                          habit.completed[day] ?
+                            'flat'
+                            :
+                            'bordered'
+                      }
+                      onClick={() => toggleCompletion(habit.id, day)}
+                      size='sm'
+                      color={'success'}
+                    >
+                      {
+                        habit.completed[day] ?
+                          <span className='line-through'>{String(day).slice(0, 3)}</span>
+                          :
+                          String(day).slice(0, 3)
+                      }
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+        <div className='pb-8'>
+          <Accordion className='mt-2 p-0' variant='splitted'>
+            <AccordionItem key="1" className='p-0' aria-label="New Task" title="New Task" indicator={<PlusIcon />}>
+              <div className='flex justify-between items-center space-x-2'>
+                <Input type='text' label="Habit Title" size='sm' className='w-full' description={"Make sure it's your precise habit."} value={habitTitle} onValueChange={(value) => setHabitTitle(value)} />
+                <Select selectionMode='multiple' label="Days" size='sm' className="w-full" description={"Mention the days to align this habit."} selectedKeys={habitDaysSet} onSelectionChange={(keys: Set<string>) => setHabitDaysSet(keys)} >
+                  <SelectItem key={"Sunday"} value={"Sunday"}>Sunday</SelectItem>
+                  <SelectItem key={"Monday"} value={"Monday"}>Monday</SelectItem>
+                  <SelectItem key={"Tuesday"} value={"Tuesday"}>Tuesday</SelectItem>
+                  <SelectItem key={"Wednesday"} value={"Wednesday"}>Wednesday</SelectItem>
+                  <SelectItem key={"Thursday"} value={"Thursday"}>Thursday</SelectItem>
+                  <SelectItem key={"Friday"} value={"Friday"}>Friday</SelectItem>
+                  <SelectItem key={"Saturday"} value={"Saturday"}>Saturday</SelectItem>
+                </Select>
+                <Input type='number' min={1} max={4} label="Priority" size='sm' className='w-full' description={"Priority ranges from 1 to 4."} value={habitPriority} onValueChange={(value) => setHabitPriority(value)} />
+              </div>
+              <div className='flex items-center justify-start pb-4'>
+                <Button color='primary' onClick={addHabit} isDisabled={habitTitle && habitDays && habitPriority ? false : true}>
+                  Add Habit
+                </Button>
+              </div>
+            </AccordionItem>
+          </Accordion>
         </div>
       </div>
+    </div >
+  );
+};
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
-}
+export default HabitTracker;
