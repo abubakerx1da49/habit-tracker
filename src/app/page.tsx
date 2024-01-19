@@ -273,7 +273,7 @@ const HabitTracker = () => {
         <div className='pb-8'>
           <Accordion className='mt-2 p-0' variant='splitted'>
             <AccordionItem key="1" className='p-0' aria-label="New Task" title="New Task" indicator={<PlusIcon />}>
-              <div className='flex justify-between items-center space-x-2'>
+              <div className='flex flex-col lg:flex-row justify-between items-center lg:space-x-2'>
                 <Input type='text' label="Habit Title" size='sm' className='w-full' description={"Make sure it's your precise habit."} value={habitTitle} onValueChange={(value) => setHabitTitle(value)} />
                 <Select selectionMode='multiple' label="Days" size='sm' className="w-full" description={"Mention the days to align this habit."} selectedKeys={habitDaysSet} onSelectionChange={setHabitDaysSet} >
                   <SelectItem key={"Sunday"} value={"Sunday"}>Sunday</SelectItem>
@@ -284,7 +284,7 @@ const HabitTracker = () => {
                   <SelectItem key={"Friday"} value={"Friday"}>Friday</SelectItem>
                   <SelectItem key={"Saturday"} value={"Saturday"}>Saturday</SelectItem>
                 </Select>
-                <Input type='number' min={1} max={4} label="Priority" size='sm' className='w-full' description={"Priority ranges from 1 to 4."} value={habitPriority} onValueChange={(value) => setHabitPriority(value)} />
+                <Input type='number' min={1} max={4} label="Priority" size='sm' className='w-full' description={"Priority ranges from 1 to 4, don't exceed this limit."} value={habitPriority} onValueChange={(value) => setHabitPriority(value)} />
               </div>
               <div className='flex items-center justify-start pb-4'>
                 <Button color='primary' onClick={addHabit} isDisabled={habitTitle && habitDays && habitPriority ? false : true}>
