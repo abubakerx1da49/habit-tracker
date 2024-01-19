@@ -12,7 +12,9 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+![Screenshot](https://github.com/Abubakersiddique761/portfolio-data/blob/main/images/habit-tracker.png?raw=true)
 
 ## Learn More
 
